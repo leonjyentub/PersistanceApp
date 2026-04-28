@@ -3,5 +3,13 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
+  },
+  "js/ts.tsdk.path": "node_modules\\typescript\\lib",
+  "files.associations": {
+    "*.tsx": "typescriptreact"
+  },
+  "chat.tools.terminal.autoApprove": {
+    "npx tsc": true,
+    "npm install": true
   }
 }

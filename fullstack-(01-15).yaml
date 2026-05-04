@@ -1,0 +1,212 @@
+presentation:
+  title: "React Native 串接 FastAPI 全端開發教學-1"
+  description: "從後端 API Server 建置到前端整合，完成一個完整的文章管理 App。"
+  slides:
+    - id: 1
+      title: "Full Stack 教學目標"
+      content: |
+        本單元將完成一個「文章管理 App」。
+        學生會完成：
+        - Python FastAPI 後端 API Server
+        - JSON 資料格式設計
+        - React Native 前端列表頁
+        - 新增文章表單
+        - 詳細頁與編輯頁
+        - GET / POST / PUT / DELETE 完整 CRUD
+      image_prompt: "Full Stack App 架構圖，顯示 React Native App、FastAPI Server、JSON request response、文章資料 CRUD 流程，簡潔教學風格"
+    - id: 2
+      title: "整體教學流程"
+      content: |
+        本單元依照完整開發流程進行：
+        1. 後端建置 -> 2. API 設計 -> 3. JSON 與 Model
+        4. 前端 GET -> 5. 表單輸入 -> 6. POST 新增
+        7. CRUD 完整化 -> 8. 前後端整合
+      code: "Backend → API → JSON → GET → Form → POST → CRUD → Integration"
+      image_prompt: "Full Stack 教學流程時間軸，從後端建置到前端整合，每個階段以清楚箭頭串接"
+    - id: 3
+      title: "建立後端專案"
+      content: |
+        先建立 Python 後端專案資料夾。
+        建議結構：
+        backend/
+        ├── main.py
+        ├── requirements.txt
+        └── .venv/
+      code: |
+        mkdir backend
+        cd backend
+        python -m venv .venv
+        # Windows:
+        .venv\Scripts\activate
+        # macOS/Linux:
+        source .venv/bin/activate
+      image_prompt: "Python 後端專案資料夾結構圖，顯示 backend、main.py、requirements.txt、.venv，簡潔工程教學風格"
+    - id: 4
+      title: "安裝 FastAPI 與 Uvicorn"
+      content: |
+        - FastAPI 用來撰寫 Web API。
+        - Uvicorn 用來啟動 API Server。
+        - 安裝完成後，將套件記錄到 requirements.txt。
+      code: |
+        pip install fastapi uvicorn
+        pip freeze > requirements.txt
+      image_prompt: "終端機安裝 FastAPI 與 Uvicorn 的流程圖，CLI 介面風格，適合教學簡報"
+    - id: 5
+      title: "建立第一個 API Server"
+      content: |
+        在 main.py 建立最小 FastAPI 程式。
+        基本結構包含：
+        1. 建立 app 實例
+        2. 定義 route (路由)
+        3. 回傳 JSON 格式
+      code: |
+        from fastapi import FastAPI
+        app = FastAPI()
+        @app.get("/")
+        def root():
+            return {"message": "Hello API"}
+      image_prompt: "FastAPI 基本程式結構圖，顯示 app、route、JSON response，初學者教學風格"
+    - id: 6
+      title: "啟動 API Server"
+      content: |
+        使用 uvicorn 啟動伺服器。
+        參數說明：
+        - main:app：對應 main.py 的 app 變數
+        - --reload：修改程式後自動重啟
+        - --host 0.0.0.0：允許區域網路連線
+        - --port 8000：使用 8000 port
+      code: "uvicorn main:app --reload --host 0.0.0.0 --port 8000"
+      image_prompt: "Uvicorn 啟動 FastAPI Server 的流程圖，顯示 localhost:8000 與區域網路連線"
+    - id: 7
+      title: "測試 API Server"
+      content: |
+        啟動後先用瀏覽器測試。
+        測試位置：
+        - http://localhost:8000
+        - http://localhost:8000/docs
+        /docs 是 FastAPI 自動產生的 API 測試文件 (Swagger UI)。
+      code: |
+        {
+          "message": "Hello API"
+        }
+      image_prompt: "FastAPI Swagger docs 測試畫面示意圖，顯示 Try it out 按鈕與 JSON response"
+    - id: 8
+      title: "設計 JSON 資料格式"
+      content: |
+        前端與後端必須使用一致的資料格式。
+        本單元使用 Post 物件：
+        - id：文章編號 (int)
+        - title：文章標題 (string)
+        - body：文章內容 (string)
+      code: |
+        {
+          "id": 1,
+          "title": "First Post",
+          "body": "Hello from FastAPI"
+        }
+      image_prompt: "Post JSON 資料結構圖，顯示 id、title、body 三個欄位，與手機列表頁對應"
+    - id: 9
+      title: "建立 Pydantic Model"
+      content: |
+        使用 Pydantic 定義 request body。
+        PostCreate 用於：
+        - 新增文章
+        - 修改文章
+        因為新增與修改時，前端只需要送 title 與 body，id 由後端產生。
+      code: |
+        from pydantic import BaseModel
+        class PostCreate(BaseModel):
+            title: str
+            body: str
+      image_prompt: "Pydantic Model 驗證流程圖，顯示 request body 進入 API 前被檢查格式"
+    - id: 10
+      title: "建立假資料庫"
+      content: |
+        教學階段先用 Python list 模擬資料庫。
+        優點：
+        - 容易理解，不需額外設定
+        - 適合快速驗證 API 流程
+        注意：Server 重啟後資料會重置為初始狀態。
+      code: |
+        posts = [
+            {"id": 1, "title": "First Post", "body": "Hello"}
+        ]
+        next_id = 2
+      image_prompt: "Python list 模擬資料庫概念圖，list 內存放多筆 Post JSON 物件"
+    - id: 11
+      title: "API 對應 CRUD"
+      content: |
+        本單元 RESTful API 設計：
+        - Create: POST /posts
+        - Read All: GET /posts
+        - Read One: GET /posts/{id}
+        - Update: PUT /posts/{id}
+        - Delete: DELETE /posts/{id}
+      code: |
+        Create → POST /posts
+        Read → GET /posts
+        Update → PUT /posts/{id}
+        Delete → DELETE /posts/{id}
+      image_prompt: "RESTful API 與 CRUD 對應表，顯示 HTTP method、endpoint、功能"
+    - id: 12
+      title: "GET API：取得所有文章"
+      content: |
+        列表頁會呼叫 GET /posts。
+        後端回傳所有文章資料陣列，前端再用 FlatList 顯示。
+      code: |
+        @app.get("/posts")
+        def get_posts():
+            return posts
+      image_prompt: "GET /posts 流程圖，React Native 列表頁向 FastAPI Server 取得文章陣列"
+    - id: 13
+      title: "GET API：取得單筆文章"
+      content: |
+        詳細頁與編輯頁需要取得指定文章。
+        使用路由參數 post_id：
+        - 找到資料：回傳文章物件
+        - 找不到：回傳 404 Error
+      code: |
+        from fastapi import HTTPException
+        @app.get("/posts/{post_id}")
+        def get_post(post_id: int):
+            for post in posts:
+                if post["id"] == post_id:
+                    return post
+            raise HTTPException(status_code=404)
+      image_prompt: "GET /posts/{id} 單筆查詢流程圖，顯示根據 id 從資料集合找出文章"
+    - id: 14
+      title: "POST API：新增文章"
+      content: |
+        新增頁會呼叫 POST /posts。
+        流程：
+        1. 前端送出 title 與 body JSON
+        2. 後端分配新 id 並建立物件
+        3. 加入 posts 列表
+        4. 回傳新增後的文章
+      code: |
+        @app.post("/posts")
+        def create_post(post: PostCreate):
+            global next_id
+            new_post = {"id": next_id, **post.dict()}
+            posts.append(new_post)
+            next_id += 1
+            return new_post
+      image_prompt: "POST /posts 新增文章流程圖，前端表單送出 JSON，後端建立資料並回傳新文章"
+    - id: 15
+      title: "PUT API：修改文章"
+      content: |
+        編輯頁會呼叫 PUT /posts/{id}。
+        流程：
+        1. 根據 id 尋找文章
+        2. 更新 title 與 body 欄位
+        3. 回傳修改後的結果
+        4. 找不到則報 404
+      code: |
+        @app.put("/posts/{post_id}")
+        def update_post(post_id: int, post_data: PostCreate):
+            for post in posts:
+                if post["id"] == post_id:
+                    post.update(post_data.dict())
+                    return post
+            raise HTTPException(status_code=404)
+      image_prompt: "PUT /posts/{id} 修改資料流程圖，編輯頁送出修改後資料，FastAPI 更新指定文章"

@@ -1,0 +1,161 @@
+presentation:
+  title: "React Native 串接 FastAPI 全端開發教學-3"
+  description: "從後端 API 設計到前端頁面實作，完整示範如何使用 React Native 與 FastAPI 建立一個簡單的 CRUD 應用程式。"
+  slides:
+    - id: 31
+      title: "詳細頁：顯示文章"
+      content: |
+        詳細頁面生命週期：
+        1. 頁面加載後讀取 postId
+        2. useEffect 觸發 API 讀取
+        3. 資料存入狀態並顯示於畫面
+      code: |
+        useEffect(() => {
+          loadPost();
+        }, [id]);
+      image_prompt: "文章詳細頁資料流圖，路由 id 到 API，再到 state 與 UI 顯示"
+    - id: 32
+      title: "詳細頁：編輯與刪除按鈕"
+      content: |
+        詳細頁提供操作介面：
+        - 編輯按鈕：跳轉至 /posts/[id]/edit
+        - 刪除按鈕：觸發刪除警告或直接呼叫 API
+      code: |
+        <Button title="編輯" onPress={() => router.push(`/posts/${id}/edit`)} />
+        <Button title="刪除" onPress={onDelete} color="red" />
+      image_prompt: "文章詳細頁 UI，顯示文章內容、編輯按鈕、刪除按鈕"
+    - id: 33
+      title: "前端 PUT：修改文章"
+      content: |
+        實作 updatePost(id, data) 函式。
+        - Method: "PUT"
+        - 傳遞修改後的 JSON 資料
+        - 後端會同步更新資料庫中的項目
+      code: |
+        await fetch(`${API_BASE_URL}/posts/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+      image_prompt: "PUT 修改文章流程圖，編輯頁送出 JSON，FastAPI 更新指定文章並回傳資料"
+    - id: 34
+      title: "編輯頁：載入原始資料"
+      content: |
+        編輯頁面（Pre-fill）的重要步驟：
+        在 useEffect 中先拿舊資料，填入 TextInput 的初始 State，讓使用者不必重新輸入全部內容。
+      code: |
+        const data = await getPostById(postId);
+        setTitle(data.title);
+        setBody(data.body);
+      image_prompt: "編輯頁載入原資料流程圖，GET /posts/{id} 後將資料填入 TextInput"
+    - id: 35
+      title: "編輯頁：送出修改"
+      content: |
+        1. 點擊「儲存」
+        2. 呼叫 updatePost
+        3. 成功後建議返回詳細頁：router.replace(`/posts/${id}`)
+      code: |
+        await updatePost(postId, { title, body });
+        router.replace(`/posts/${postId}`);
+      image_prompt: "編輯頁 PUT 更新流程圖，驗證表單、呼叫 updatePost、返回詳細頁"
+    - id: 36
+      title: "前端 DELETE：刪除文章"
+      content: |
+        實作 deletePost(id) 函式。
+        - Method: "DELETE"
+        - 不需傳送 Body，只需指定 ID
+      code: |
+        await fetch(`${API_BASE_URL}/posts/${id}`, {
+          method: "DELETE"
+        });
+      image_prompt: "DELETE 刪除文章流程圖，詳細頁呼叫 API，後端刪除後回到列表頁"
+    - id: 37
+      title: "詳細頁：執行刪除"
+      content: |
+        刪除後的動線處理：
+        1. 呼叫 API
+        2. 使用 router.replace("/") 直接返回首頁
+        3. 確保使用者不會回到已不存在的詳細頁面
+      code: |
+        await deletePost(postId);
+        router.replace("/");
+      image_prompt: "詳細頁刪除操作流程圖，DELETE API 成功後返回文章列表頁"
+    - id: 38
+      title: "導航方式比較"
+      content: |
+        - router.push: 像打開新分頁，可以返回上一頁（適合進入詳細頁）。
+        - router.replace: 替換當前頁面，無法返回（適合完成任務後的重定向）。
+      code: |
+        router.push("/posts/1"); // 可返回
+        router.replace("/"); // 不可返回到原表單
+      image_prompt: "router.push 與 router.replace 比較圖，顯示頁面堆疊與取代效果"
+    - id: 39
+      title: "完整頁面與 API 對應"
+      content: |
+        複習全端對應關係：
+        - 列表頁 ↔ GET /posts
+        - 新增頁 ↔ POST /posts
+        - 詳細頁 ↔ GET /posts/{id}
+        - 編輯頁 ↔ PUT /posts/{id}
+      code: |
+        index.tsx → GET /posts
+        create.tsx → POST /posts
+        posts/[id].tsx → GET /posts/{id}
+        posts/[id]/edit.tsx → PUT /posts/{id}
+      image_prompt: "React Native 頁面與 FastAPI API 對應總覽圖，顯示每個頁面與 endpoint 關係"
+    - id: 40
+      title: "API 與 UI 同步"
+      content: |
+        資料同步的核心邏輯：
+        - API 修改的是後端。
+        - 必須透過導航返回或手動重新 fetch 來更新前端 UI 狀態，否則使用者會看到舊資料。
+      code: |
+        await updatePost(...);
+        router.replace(`/posts/${id}`); // 重新觸發詳細頁的 useEffect
+      image_prompt: "API 與 UI 同步流程圖，顯示 POST、PUT、DELETE 後重新導向與重新載入資料"
+    - id: 41
+      title: "與 SQLite 快取整合"
+      content: |
+        進階架構：Offline-first
+        1. 從 API 拿資料。
+        2. 存入手機 SQLite。
+        3. 斷網時從 SQLite 讀取，連網時自動同步。
+      code: |
+        const sync = async () => {
+          const apiData = await getPosts();
+          saveToSQLite(apiData);
+        };
+      image_prompt: "FastAPI API、React Native、SQLite 快取整合圖，顯示 API → SQLite → UI"
+    - id: 42
+      title: "常見錯誤與 Debug"
+      content: |
+        - 伺服器忘了跑 (Server offline)
+        - IP 設定錯誤 (Wrong Base URL)
+        - 沒加 await 導致非同步錯誤
+        - 資料型別錯誤 (id 是 string 但後端要 number)
+      code: |
+        console.log("Current ID:", id);
+        const postId = Number(id);
+      image_prompt: "Full Stack App Debug 排查流程圖，包含 API、IP、路由 id、await、UI 同步問題"
+    - id: 43
+      title: "課堂實作任務"
+      content: |
+        請完成「文章管理 App」的全端實作。
+        - 建立 FastAPI Server
+        - 實作完整 CRUD API
+        - 完成 React Native 四大頁面導航與功能
+      code: |
+        Backend: 4 Endpoints
+        Frontend: 4 Pages + API Functions
+      image_prompt: "課堂實作任務清單圖，顯示後端 API 與前端四個頁面全部完成"
+    - id: 44
+      title: "本單元成果"
+      content: |
+        恭喜完成全端串接單元！
+        你現在具備以下能力：
+        - 建立 Python 後端 API
+        - 設計 RESTful API 規範
+        - 前端 fetch 串接技術
+        - 管理複雜的 App 頁面狀態與導航
+      code: "User ↔ React Native ↔ Fetch ↔ FastAPI ↔ Python Data"
+      image_prompt: "Full Stack App 最終成果圖，手機 App 與 FastAPI Server 完整串接，支援文章新增、列表、詳細、編輯與刪除"

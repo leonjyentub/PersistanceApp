@@ -1,0 +1,210 @@
+presentation:
+  title: "React Native 串接 FastAPI 全端開發教學-2"
+  description: "從後端 API 設計到前端頁面實作，完整示範如何使用 React Native 與 FastAPI 建立一個簡單的 CRUD 應用程式。"
+  slides:
+    - id: 16
+      title: "DELETE API：刪除文章"
+      content: |
+        詳細頁可執行刪除呼叫 DELETE /posts/{id}。
+        流程：
+        1. 根據 id 尋找文章位置
+        2. 從 list 中移除該項目
+        3. 回傳被刪除的資料以供前端確認
+      code: |
+        @app.delete("/posts/{post_id}")
+        def delete_post(post_id: int):
+            for index, post in enumerate(posts):
+                if post["id"] == post_id:
+                    return posts.pop(index)
+            raise HTTPException(status_code=404)
+      image_prompt: "DELETE /posts/{id} 刪除資料流程圖，前端送出刪除請求，後端移除指定文章"
+    - id: 17
+      title: "後端完整 main.py 結構"
+      content: |
+        後端 main.py 應包含：
+        - FastAPI app 實例
+        - CORS middleware (允許前端跨域)
+        - Pydantic Model 定義
+        - 假資料庫 (Python List)
+        - 完整的 CRUD 路由
+      code: |
+        from fastapi.middleware.cors import CORSMiddleware
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+      image_prompt: "FastAPI main.py 程式架構圖，分成 imports、app、middleware、model、fake database、routes 區塊"
+    - id: 18
+      title: "React Native 專案頁面結構"
+      content: |
+        使用 expo-router 建立多頁 App。
+        結構建議：
+        - app/index.tsx (列表)
+        - app/create.tsx (新增)
+        - app/posts/[id].tsx (詳細)
+        - app/posts/[id]/edit.tsx (編輯)
+      code: |
+        app/
+        ├── _layout.tsx
+        ├── index.tsx
+        ├── create.tsx
+        └── posts/
+            └── [id].tsx
+      image_prompt: "Expo Router 專案結構圖，顯示 app 路由頁面與 src/api、src/types 分層"
+    - id: 19
+      title: "建立 Stack 導航"
+      content: |
+        在 app/_layout.tsx 建立 Stack 導航。
+        Stack 會管理頁面的堆疊切換：
+        - 設定每一頁的標題 (Header Title)
+        - 處理頁面返回邏輯
+      code: |
+        import { Stack } from "expo-router";
+        export default function Layout() {
+          return <Stack />;
+        }
+      image_prompt: "Stack Navigator 頁面堆疊示意圖，顯示列表、新增、詳細、編輯四個畫面"
+    - id: 20
+      title: "前端 TypeScript 型別"
+      content: |
+        前端型別必須與後端 JSON 結構嚴格一致。
+        - Post: 包含 id 的完整文章
+        - PostInput: 僅包含標題與內容 (用於新增/修改)
+      code: |
+        export type Post = {
+          id: number;
+          title: string;
+          body: string;
+        };
+        export type PostInput = Pick<Post, 'title'|'body'>;
+      image_prompt: "TypeScript Post 型別與 JSON 格式對應圖，顯示 id、title、body 一致"
+    - id: 21
+      title: "設定 API URL"
+      content: |
+        建立 src/api/posts.ts 並設定 API 基礎網址。
+        注意環境差異：
+        - iOS 模擬器: localhost
+        - Android 模擬器: 10.0.2.2
+        - 實體手機: 電腦區域網路 IP (192.168.x.x)
+      code: "const API_BASE_URL = 'http://192.168.1.10:8000';"
+      image_prompt: "手機、模擬器、電腦連線 API 的比較圖，顯示 localhost、Android 10.0.2.2、區域網路 IP"
+    - id: 22
+      title: "前端 GET：取得所有文章"
+      content: |
+        使用 fetch 呼叫 GET /posts。
+        1. 發出非同步請求
+        2. 檢查 Response 是否成功 (res.ok)
+        3. 解析 JSON 並回傳
+      code: |
+        export const getPosts = async (): Promise<Post[]> => {
+          const res = await fetch(`${API_BASE_URL}/posts`);
+          if (!res.ok) throw new Error("Failed");
+          return res.json();
+        };
+      image_prompt: "getPosts 函式資料流圖，React Native 呼叫 FastAPI GET /posts，回傳文章陣列"
+    - id: 23
+      title: "列表頁：載入資料"
+      content: |
+        在 app/index.tsx 管理列表狀態。
+        - posts: 存放文章陣列
+        - loading: 控制讀取中 UI
+        - error: 錯誤訊息處理
+      code: |
+        const [posts, setPosts] = useState<Post[]>([]);
+        const loadData = async () => {
+          setLoading(true);
+          const data = await getPosts();
+          setPosts(data);
+          setLoading(false);
+        };
+      image_prompt: "列表頁資料載入流程圖，顯示 loading、getPosts、setPosts、error handling"
+    - id: 24
+      title: "列表頁：FlatList 顯示"
+      content: |
+        使用 FlatList 渲染文章項目。
+        - keyExtractor 使用文章 id
+        - renderItem 配合 Pressable 製作點擊效果
+        - 點擊後跳轉至詳細頁
+      code: |
+        <FlatList
+          data={posts}
+          renderItem={({ item }) => (
+            <Link href={`/posts/${item.id}`}>{item.title}</Link>
+          )}
+        />
+      image_prompt: "文章列表 UI 示意圖，FlatList 顯示多筆文章，點擊項目進入詳細頁"
+    - id: 25
+      title: "列表頁：新增入口"
+      content: |
+        在列表頁面提供一個顯眼的新增按鈕。
+        使用 expo-router 的 router.push("/create") 進行跳轉。
+      code: |
+        <Button 
+          title="新增文章" 
+          onPress={() => router.push("/create")} 
+        />
+      image_prompt: "列表頁新增按鈕導向 create 頁面的導航流程圖"
+    - id: 26
+      title: "表單頁：TextInput"
+      content: |
+        新增頁面使用 TextInput 讓使用者輸入資料。
+        - 使用標題與內容兩個 State
+        - 內容欄位開啟 multiline 支援長文字
+      code: |
+        <TextInput 
+          placeholder="標題" 
+          value={title} 
+          onChangeText={setTitle} 
+        />
+      image_prompt: "React Native 新增文章表單 UI，顯示 title 單行輸入框與 body 多行輸入框"
+    - id: 27
+      title: "前端 POST：新增文章"
+      content: |
+        實作 createPost API 呼叫函式。
+        - Method: "POST"
+        - Headers: 指定 JSON Content-Type
+        - Body: 將物件轉為 JSON 字串
+      code: |
+        await fetch(`${API_BASE_URL}/posts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+      image_prompt: "POST 新增文章流程圖，表單資料轉 JSON 後送到 FastAPI Server"
+    - id: 28
+      title: "新增頁：送出表單"
+      content: |
+        處理提交按鈕的邏輯：
+        1. 驗證欄位不可為空
+        2. 呼叫 createPost
+        3. 成功後使用 router.replace("/") 返回列表
+      code: |
+        const onSubmit = async () => {
+          if (!title || !body) return;
+          await createPost({ title, body });
+          router.replace("/");
+        };
+      image_prompt: "新增文章表單提交流程圖，驗證、POST API、成功返回列表頁、失敗顯示錯誤"
+    - id: 29
+      title: "動態路由：文章詳細頁"
+      content: |
+        app/posts/[id].tsx 處理不同文章的顯示。
+        使用 useLocalSearchParams 取得路由中的 id 參數。
+      code: |
+        const { id } = useLocalSearchParams();
+        const postId = Number(id);
+      image_prompt: "Expo Router 動態路由示意圖，顯示 /posts/1 對應 posts/[id].tsx 並取得 id"
+    - id: 30
+      title: "前端 GET：取得單筆文章"
+      content: |
+        實作 getPostById(id) 函式。
+        - 根據 id 串接 URL (GET /posts/{id})
+        - 回傳該筆文章的完整物件
+      code: |
+        export const getPostById = async (id: number) => {
+          const res = await fetch(`${API_BASE_URL}/posts/${id}`);
+          return res.json();
+        };
+      image_prompt: "getPostById 函式流程圖，顯示根據 id 向後端取得單筆文章資料"
